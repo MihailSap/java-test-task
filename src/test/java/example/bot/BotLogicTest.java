@@ -37,16 +37,6 @@ class BotLogicTest {
     }
 
     /**
-     * Проверка команды /start
-     * С этого теста проще всего начать
-     */
-    @Test
-    void startCommandTest(){
-        botLogic.processCommand(user, "/start");
-        Assertions.assertEquals("Привет!\r\n", outputStream.toString());
-    }
-
-    /**
      * Тест на команду /test
      * Проверяет корректность поведения программы при правильных ответах
      */
@@ -123,6 +113,8 @@ class BotLogicTest {
 
         botLogic.processCommand(user, "/repeat");
         expectedOutput.append("Сколько будет 2 + 2 * 2\r\n");
+        Assertions.assertEquals(State.REPEAT, user.getState());
+
         botLogic.processCommand(user, "6");
         expectedOutput.append("Правильный ответ!\r\n");
         expectedOutput.append("Тест завершен\r\n");

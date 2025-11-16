@@ -4,9 +4,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
 /**
  * Реализация тестов для класса {@link BotLogic}
  */
@@ -15,109 +12,139 @@ class BotLogicTest {
     /**
      * Id чата по умолчанию
      */
-    private final Long CHAT_ID = 0L;
-
-    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    private static final Long CHAT_ID = 0L;
 
     private User user;
 
-    private Bot bot;
+    private FakeBot bot;
 
     private BotLogic botLogic;
 
     /**
-     * Создание объектов перед каждым тестом
+     * Явное создание объектов перед каждым тестом
      */
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         user = new User(CHAT_ID);
-        bot = new ConsoleBot();
+        bot = new FakeBot();
         botLogic = new BotLogic(bot);
-        System.setOut(new PrintStream(outputStream));
     }
 
     /**
-     * Тест на команду /test
-     * Проверяет корректность поведения программы при правильных ответах
+     * <b>Тест на команду {@code /test}</b>
+     * <p>Проверяет корректность поведения программы при правильных ответах</p>
      */
     @Test
-    void testCommandCorrectTest(){
-        StringBuilder expectedOutput = new StringBuilder();
-        String rightAnswer = "Правильный ответ!\r\n";
+    void testCorrectAnswers(){
         botLogic.processCommand(user, "/start");
-        expectedOutput.append("Привет!\r\n");
+        Assertions.assertEquals("Привет!", bot.getLastMessage());
 
         botLogic.processCommand(user, "/test");
-        expectedOutput.append("Вычислите степень: 10^2\r\n");
-        Assertions.assertEquals(State.TEST, user.getState());
-        Assertions.assertEquals(expectedOutput.toString(), outputStream.toString());
+        Assertions.assertEquals("Вычислите степень: 10^2", bot.getLastMessage());
 
         botLogic.processCommand(user, "100");
-        expectedOutput.append(rightAnswer);
-        expectedOutput.append("Сколько будет 2 + 2 * 2\r\n");
-        Assertions.assertEquals(expectedOutput.toString(), outputStream.toString());
+        Assertions.assertEquals(
+                "Правильный ответ!", bot.getNextToLastMessage());
+        Assertions.assertEquals(
+                "Сколько будет 2 + 2 * 2", bot.getLastMessage());
 
         botLogic.processCommand(user, "6");
-        expectedOutput.append(rightAnswer);
-        expectedOutput.append("Тест завершен\r\n");
-        Assertions.assertEquals(State.INIT, user.getState());
-        Assertions.assertEquals(expectedOutput.toString(), outputStream.toString());
+        Assertions.assertEquals(
+                "Правильный ответ!", bot.getNextToLastMessage());
+        Assertions.assertEquals("Тест завершен", bot.getLastMessage());
     }
 
     /**
-     * Тест на команду /test
-     * Проверяет корректность поведения программы при неправильных ответах
+     * <b>Тест на команду {@code /test}</b>
+     * <p>Проверяет корректность поведения программы при неправильных ответах</p>
      */
     @Test
-    void testCommandIncorrectTest(){
-        StringBuilder expectedOutput = new StringBuilder();
-        String incorrectAnswer = "Вы ошиблись, верный ответ";
+    void testIncorrectAnswers(){
         botLogic.processCommand(user, "/start");
-        expectedOutput.append("Привет!\r\n");
-
         botLogic.processCommand(user, "/test");
-        expectedOutput.append("Вычислите степень: 10^2\r\n");
+        Assertions.assertEquals("Вычислите степень: 10^2", bot.getLastMessage());
 
         botLogic.processCommand(user, "0");
-        expectedOutput.append(String.format("%s: 100\r\n", incorrectAnswer));
-        expectedOutput.append("Сколько будет 2 + 2 * 2\r\n");
-        Assertions.assertEquals(expectedOutput.toString(), outputStream.toString());
+        Assertions.assertEquals(
+                "Вы ошиблись, верный ответ: 100", bot.getNextToLastMessage());
+        Assertions.assertEquals("Сколько будет 2 + 2 * 2", bot.getLastMessage());
 
         botLogic.processCommand(user, "0");
-        expectedOutput.append(String.format("%s: 6\r\n", incorrectAnswer));
-        expectedOutput.append("Тест завершен\r\n");
-        Assertions.assertEquals(expectedOutput.toString(), outputStream.toString());
+        Assertions.assertEquals(
+                "Вы ошиблись, верный ответ: 6", bot.getNextToLastMessage());
+        Assertions.assertEquals("Тест завершен", bot.getLastMessage());
     }
 
     /**
-     * Тест на команду /repeat
-     * Проверяет корректность повторения вопросов,
-     * ответ на которые изначально был дан некорректно
+     * <b>Тест на команду {@code /repeat}</b>
+     * <p>Проверяется сохранение вопроса с неправильным ответом</p>
+     * <p>Также, проверяется отсутствие сохранения вопроса с правильным ответом</p>
      */
     @Test
-    void repeatCommandAfterIncorrectTest(){
-        StringBuilder expectedOutput = new StringBuilder();
+    void testRepeatAddOnlyIncorrectAnswer(){
         botLogic.processCommand(user, "/start");
-        expectedOutput.append("Привет!\r\n");
-
         botLogic.processCommand(user, "/test");
-        expectedOutput.append("Вычислите степень: 10^2\r\n");
-
-        botLogic.processCommand(user, "100");
-        expectedOutput.append("Правильный ответ!\r\n");
-        expectedOutput.append("Сколько будет 2 + 2 * 2\r\n");
-
         botLogic.processCommand(user, "0");
-        expectedOutput.append("Вы ошиблись, верный ответ: 6\r\n");
-        expectedOutput.append("Тест завершен\r\n");
+        botLogic.processCommand(user, "6");
 
         botLogic.processCommand(user, "/repeat");
-        expectedOutput.append("Сколько будет 2 + 2 * 2\r\n");
-        Assertions.assertEquals(State.REPEAT, user.getState());
+        Assertions.assertEquals("Вычислите степень: 10^2", bot.getLastMessage());
 
+        botLogic.processCommand(user, "100");
+        Assertions.assertEquals(
+                "Правильный ответ!", bot.getNextToLastMessage());
+        Assertions.assertEquals("Тест завершен", bot.getLastMessage());
+    }
+
+    /**
+     * <b>Тест на команду {@code /repeat}</b>
+     * <p>Проверяется отсутствие удаления вопроса с повторным неправильным ответом</p>
+     * <p>Также, проверяется удаление вопроса с повторным правильным ответом</p>
+     */
+    @Test
+    void testRepeatRemoveOnlyCorrectAnswer(){
+        botLogic.processCommand(user, "/start");
+        botLogic.processCommand(user, "/test");
+        botLogic.processCommand(user, "0");
         botLogic.processCommand(user, "6");
-        expectedOutput.append("Правильный ответ!\r\n");
-        expectedOutput.append("Тест завершен\r\n");
-        Assertions.assertEquals(expectedOutput.toString(), outputStream.toString());
+
+        botLogic.processCommand(user, "/repeat");
+        botLogic.processCommand(user, "0");
+        Assertions.assertEquals(
+                "Вы ошиблись, верный ответ: 100", bot.getNextToLastMessage());
+        Assertions.assertEquals("Тест завершен", bot.getLastMessage());
+
+        botLogic.processCommand(user, "/repeat");
+        botLogic.processCommand(user, "100");
+        Assertions.assertEquals(
+                "Правильный ответ!", bot.getNextToLastMessage());
+        Assertions.assertEquals("Тест завершен", bot.getLastMessage());
+
+        botLogic.processCommand(user, "/repeat");
+        Assertions.assertEquals("Нет вопросов для повторения", bot.getLastMessage());
+    }
+
+    /**
+     * <b>Тест на команду {@code /notify}</b>
+     * <p>Проверяет корректность работы напоминания спустя секунду</p>
+     */
+    @Test
+    void testNotify() throws InterruptedException {
+        String notifyText = "Выполнить домашнее задание";
+
+        botLogic.processCommand(user, "/start");
+        botLogic.processCommand(user, "/notify");
+        Assertions.assertEquals("Введите текст напоминания", bot.getLastMessage());
+
+        botLogic.processCommand(user, notifyText);
+        Assertions.assertEquals("Через сколько секунд напомнить?", bot.getLastMessage());
+
+        botLogic.processCommand(user, "1");
+        Assertions.assertEquals("Напоминание установлено", bot.getLastMessage());
+        Thread.sleep(950L);
+        Assertions.assertEquals("Напоминание установлено", bot.getLastMessage());
+        Thread.sleep(100L);
+        Assertions.assertEquals(
+                String.format("Сработало напоминание: '%s'", notifyText), bot.getLastMessage());
     }
 }

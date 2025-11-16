@@ -2,60 +2,75 @@ package example.note;
 
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Реализация тестов для класса {@link NoteLogic}
+ * <b>Реализация тестов для класса {@link NoteLogic}.</b>
  * Тесты не проходят, так как логика по работе с заметками реализована некорректно
  */
 class NoteLogicTest {
 
-    private final NoteLogic noteLogic = new NoteLogic();
+    private NoteLogic noteLogic;
 
     /**
-     * Тест проверяет создание и получение двух заметок (/add и /notes)
-     * Необходимо тестировать добавление нескольких заметок,
+     * Явное создание объекта {@link NoteLogic} перед каждым тестом
+     */
+    @BeforeEach
+    void setUp(){
+        noteLogic = new NoteLogic();
+    }
+
+    /**
+     * <b>Тест на создание и получение двух заметок - {@code /add} и {@code /notes}</b>
+     * <p>Необходимо тестировать добавление нескольких заметок,
      * так как заглушку для создания одной заметки тоже можно написать,
-     * что позволит обойти тест с добавлением одной заметки
+     * что позволит обойти тест с добавлением одной заметки</p>
      */
     @Test
-    void addAndGetNotesTest(){
-        noteLogic.handleMessage("/add hello");
-        String notes = noteLogic.handleMessage("/notes");
-        Assertions.assertEquals("Your notes: hello", notes);
-
+    void testAddAndGetNotes(){
+        Assertions.assertEquals("Note added!", noteLogic.handleMessage("/add hello"));
+        Assertions.assertEquals("""
+                Your notes:
+                1. hello
+                """, noteLogic.handleMessage("/notes"));
         noteLogic.handleMessage("/add world");
-        String updatedNotes = noteLogic.handleMessage("/notes");
-        Assertions.assertEquals("Your notes: hello world", updatedNotes);
+        Assertions.assertEquals("""
+                Your notes:
+                1. hello
+                2. world
+                """, noteLogic.handleMessage("/notes"));
     }
 
 
     /**
-     * Тест на редактирование заметки (/edit)
-     * Допустим, после добавления заметки "hello" ей присваивается id=1
-     * С помощью этого id можно указать, какую именно заметку нужно отредактировать
+     * <b>Тест на редактирование заметки - {@code /edit}</b>
+     * <p>Допустим, после добавления заметки "hello" ей присваивается id=1
+     * С помощью этого id можно указать, какую именно заметку нужно отредактировать</p>
      */
     @Test
-    void editNoteTest(){
+    void testEditNote(){
         noteLogic.handleMessage("/add hello");
-        noteLogic.handleMessage("/edit 1 goodbye");
-        String notes = noteLogic.handleMessage("/notes");
-        Assertions.assertEquals("Your notes: goodbye", notes);
+        Assertions.assertEquals("Note edited!", noteLogic.handleMessage("/edit 1. world"));
+        Assertions.assertEquals("""
+                Your notes:
+                1. world
+                """, noteLogic.handleMessage("/notes"));
     }
 
     /**
-     * Тест на удаление заметки
-     * Допустим, после добавления заметки "hello" ей присваивается id=1
-     * С помощью этого id можно указать, какую именно заметку нужно удалить
+     * <b>Тест на удаление заметки - {@code /delete}</b>
+     * <p>Допустим, после добавления заметки "hello" ей присваивается id=1
+     * С помощью этого id можно указать, какую именно заметку нужно удалить</p>
      */
     @Test
-    void deleteNoteTest(){
+    void testDeleteNote(){
         noteLogic.handleMessage("/add hello");
-        String notesAfterAdd = noteLogic.handleMessage("/notes");
-        Assertions.assertEquals("Your notes: hello", notesAfterAdd);
-
-        noteLogic.handleMessage("/del 1");
-        String notesAfterDel = noteLogic.handleMessage("/notes");
-        Assertions.assertEquals("Your notes:", notesAfterDel);
+        noteLogic.handleMessage("/add world");
+        Assertions.assertEquals("Note deleted!", noteLogic.handleMessage("/delete 1"));
+        Assertions.assertEquals("""
+                Your notes:
+                2. world
+                """, noteLogic.handleMessage("/notes"));
     }
 }

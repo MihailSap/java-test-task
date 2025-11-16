@@ -1,6 +1,7 @@
 package example.container;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -8,17 +9,21 @@ import org.junit.jupiter.api.Test;
  */
 class ContainerTest {
 
+    private Container container;
+
     /**
-     * Контейнер
-     * Один объект для всех тестов в классе
+     * Явное создание объекта {@link Container} перед каждым тестом
      */
-    private final Container container = new Container();
+    @BeforeEach
+    void setUp(){
+        container = new Container();
+    }
 
     /**
      * Тест корректности добавления
      */
     @Test
-    void addTest(){
+    void testAddItem(){
         Item firstItem = new Item(123L);
         boolean isAddedFirstTime = container.add(firstItem);
         Assertions.assertTrue(isAddedFirstTime);
@@ -38,12 +43,16 @@ class ContainerTest {
      * Тест корректности удаления
      */
     @Test
-    void removeTest(){
-        Item item = new Item(123L);
-        container.add(item);
-        boolean isRemoved = container.remove(item);
+    void testRemoveItem(){
+        Item firstItem = new Item(123L);
+        container.add(firstItem);
+        Item secondItem = new Item(456L);
+        container.add(secondItem);
+
+        boolean isRemoved = container.remove(firstItem);
         Assertions.assertTrue(isRemoved);
-        Assertions.assertEquals(0, container.size());
-        Assertions.assertFalse(container.contains(item));
+        Assertions.assertEquals(1, container.size());
+        Assertions.assertFalse(container.contains(firstItem));
+        Assertions.assertTrue(container.contains(secondItem));
     }
 }
